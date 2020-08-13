@@ -9,6 +9,7 @@ from progress.bar import Bar
 import time
 import torch
 import math
+import pickle
 
 from model.model import create_model, load_model
 from model.decode import generic_decode
@@ -50,6 +51,8 @@ class Detector(object):
     self.pre_image_ori = None
     self.tracker = Tracker(opt)
     self.debugger = Debugger(opt=opt, dataset=self.trained_dataset)
+    self.detections = pickle.load(open("/data2/jl5/bdd100k_pred/train/instances_driving1002.pkl", "rb"))
+    self.idx = 0
 
 
   def run(self, image_or_path_or_tensor, meta={}):
@@ -106,8 +109,13 @@ class Detector(object):
           # pre_inds is not used in the current version.
           # We used pre_inds for learning an offset from previous image to
           # the current image.
+          if self.idx == 0:
+            dets = self.detections[0]
+          else:
+            dets = self.detections[self.idx-1]
+            self.idx += 1
           pre_hms, pre_inds = self._get_additional_inputs(
-            self.tracker.tracks, meta, with_hm=not self.opt.zero_pre_hm)
+            dets, meta, with_hm=not self.opt.zero_pre_hm)
       
       pre_process_time = time.time()
       pre_time += pre_process_time - scale_start_time
@@ -261,12 +269,12 @@ class Detector(object):
     input_hm = np.zeros((1, inp_height, inp_width), dtype=np.float32)
 
     output_inds = []
-    for det in dets:
-      if det['score'] < self.opt.pre_thresh:
+    for i in range(len(dets['scores'])):
+      if dets['scores'][i] < self.opt.pre_thresh:
         continue
-      bbox = self._trans_bbox(det['bbox'], trans_input, inp_width, inp_height)
+      bbox = self._trans_bbox(np.array(dets['boxes'][i]) / 3, trans_input, inp_width, inp_height)
       bbox_out = self._trans_bbox(
-        det['bbox'], trans_output, out_width, out_height)
+        np.array(dets['boxes'][i]) / 3, trans_output, out_width, out_height)
       h, w = bbox[3] - bbox[1], bbox[2] - bbox[0]
       if (h > 0 and w > 0):
         radius = gaussian_radius((math.ceil(h), math.ceil(w)))
@@ -446,8 +454,8 @@ class Detector(object):
       debugger.imgs['generic'] = debugger.imgs['ddd_pred']
     if self.opt.debug == 4:
       debugger.save_all_imgs(self.opt.debug_dir, prefix='{}'.format(self.cnt))
-    else:
-      debugger.show_all_imgs(pause=self.pause)
+    # else:
+    #   debugger.show_all_imgs(pause=self.pause)
   
 
   def reset_tracking(self):
