@@ -307,8 +307,8 @@ class Trainer(object):
 
       if opt.debug == 4:
         debugger.save_all_imgs(opt.debug_dir, prefix='{}'.format(iter_id))
-      else:
-        debugger.show_all_imgs(pause=True)
+      # else:
+      #   debugger.show_all_imgs(pause=True)
   
   def val(self, epoch, data_loader):
     return self.run_epoch('val', epoch, data_loader)

@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.utils.linear_assignment_ import linear_assignment
+# from sklearn.utils.linear_assignment_ import linear_assignment
 from numba import jit
 import copy
 
@@ -28,7 +28,6 @@ class Tracker(object):
   def step(self, results, public_det=None):
     N = len(results)
     M = len(self.tracks)
-
     dets = np.array(
       [det['ct'] + det['tracking'] for det in results], np.float32) # N x 2
     track_size = np.array([((track['bbox'][2] - track['bbox'][0]) * \
@@ -48,7 +47,7 @@ class Tracker(object):
       (dist > item_size.reshape(N, 1)) + \
       (item_cat.reshape(N, 1) != track_cat.reshape(1, M))) > 0
     dist = dist + invalid * 1e18
-    
+
     if self.opt.hungarian:
       item_score = np.array([item['score'] for item in results], np.float32) # N
       dist[dist > 1e18] = 1e18
@@ -59,7 +58,7 @@ class Tracker(object):
       if not (d in matched_indices[:, 0])]
     unmatched_tracks = [d for d in range(tracks.shape[0]) \
       if not (d in matched_indices[:, 1])]
-    
+
     if self.opt.hungarian:
       matches = []
       for m in matched_indices:
@@ -109,7 +108,7 @@ class Tracker(object):
           track['age'] = 1
           track['active'] =  1
           ret.append(track)
-    
+
     # Never used
     for i in unmatched_tracks:
       track = self.tracks[i]
