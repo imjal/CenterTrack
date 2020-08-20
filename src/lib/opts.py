@@ -250,6 +250,7 @@ class opts(object):
     # custom dataset
     self.parser.add_argument('--custom_dataset_img_path', default='')
     self.parser.add_argument('--custom_dataset_ann_path', default='')
+    self.parser.add_argument('--baseline', action='store_true')
 
   def parse(self, args=''):
     if args == '':
