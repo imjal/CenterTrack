@@ -57,6 +57,8 @@ class Tracker(object):
       mask_item_size = np.array([((item[2] - item[0]) * (item[3] - item[1])) for item in mask_rcnn_pred['boxes']], np.float32)
       invalid_mask = ((dist2 > mask_item_size.reshape(1, L)) + (dist2 > item_size.reshape(N, 1)))
       dist2 = dist2 + invalid_mask * 1e18 # make invalids a super high distance
+      mask_matched_indices = greedy_assignment(copy.deepcopy(dist2))
+      mask_matched = [x[0] for x in mask_matched_indices]
 
     if self.opt.hungarian:
       item_score = np.array([item['score'] for item in results], np.float32) # N
@@ -88,7 +90,10 @@ class Tracker(object):
       track['tracking_id'] = self.tracks[m[1]]['tracking_id']
       track['age'] = 1
       track['active'] = self.tracks[m[1]]['active'] + 1
-      track['class'] = self.tracks[m[1]]['class'] # continue the same class track
+      if mask_rcnn_pred is not None and m[0] in mask_matched:
+        track['class'] = mask_rcnn_pred['classes'][m[1]]
+      else:
+        track['class'] = self.tracks[m[1]]['class'] # continue the same class track
       ret.append(track)
 
     if self.opt.public_det and len(unmatched_dets) > 0:
@@ -113,9 +118,7 @@ class Tracker(object):
     else:
       # # Private detection: create tracks for all un-matched detections
       if mask_rcnn_pred is not None:
-        new_matched_indices = greedy_assignment(copy.deepcopy(dist2))
-        matched_dets = [x[0] for x in matches]
-        for i, m in enumerate(new_matched_indices):
+        for i, m in enumerate(mask_matched_indices):
           if m[0] not in unmatched_dets:
             continue
           track = results[m[0]]
