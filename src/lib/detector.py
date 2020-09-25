@@ -114,7 +114,7 @@ class Detector(object):
               mask_rcnn_dets = self.detections[0]
             else:
               mask_rcnn_dets = self.detections[self.idx-1]
-            if self.idx % 8 == 0:
+            if self.idx % 16 == 0:
               pre_hms, pre_inds = self._get_additional_inputs_maskrcnn(
                 mask_rcnn_dets, meta, with_hm=not self.opt.zero_pre_hm)
             else:
@@ -160,7 +160,7 @@ class Detector(object):
       # public detection mode in MOT challenge
       public_det = meta['cur_dets'] if self.opt.public_det else None
       # add tracking id to results
-      if self.idx % 8 == 0:
+      if self.idx % 16 == 0:
         results = self.tracker.step(results, public_det, mask_rcnn_dets)
       else:
         results = self.tracker.step(results, public_det)

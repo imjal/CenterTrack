@@ -42,14 +42,19 @@ class Tracker(object):
     item_cat = np.array([item['class'] for item in results], np.int32) # N
     tracks = np.array(
       [pre_det['ct'] for pre_det in self.tracks], np.float32) # M x 2
-    dist = (((tracks.reshape(1, -1, 2) - \
+    dist2 = (((tracks.reshape(1, -1, 2) - \
               dets.reshape(-1, 1, 2)) ** 2).sum(axis=2)) # N x M
-    invalid = ((dist > track_size.reshape(1, M)) + \
-      (dist > item_size.reshape(N, 1))) # + \
-    # (item_cat.reshape(N, 1) != track_cat.reshape(1, M))) > 0 # for now get rid of category matching, solely distance & size
-    dist = dist + invalid * 1e18
+    if mask_rcnn_pred is None:
+      invalid = ((dist2 > track_size.reshape(1, M)) + \
+        (dist2 > item_size.reshape(N, 1))) > 0
+    else:
+      invalid = ((dist2 > track_size.reshape(1, M)) + \
+        (dist2 > item_size.reshape(N, 1)) + \
+        (item_cat.reshape(N, 1) != track_cat.reshape(1, M))) > 0 # for now get rid of category matching, solely distance & size
+    dist = dist2 + invalid * 1e18
+    # first do class-specific matching
 
-    if mask_rcnn_pred is not None:
+    if mask_rcnn_pred:
       L = len(mask_rcnn_pred['boxes'])
       mask_rcnn_pred['boxes'] = np.array(mask_rcnn_pred['boxes']) / 3
       mask_centers = np.array([ [ (x[0] + x[2])/2, (x[1] + x[3])/2] for x in mask_rcnn_pred['boxes']])
@@ -90,10 +95,10 @@ class Tracker(object):
       track['tracking_id'] = self.tracks[m[1]]['tracking_id']
       track['age'] = 1
       track['active'] = self.tracks[m[1]]['active'] + 1
-      if mask_rcnn_pred is not None and m[0] in mask_matched:
-        track['class'] = mask_rcnn_pred['classes'][m[1]]
-      else:
-        track['class'] = self.tracks[m[1]]['class'] # continue the same class track
+      # if mask_rcnn_pred is not None and m[0] in mask_matched:
+      #   track['class'] = mask_rcnn_pred['classes'][m[1]] + 1
+      # else:
+      track['class'] = self.tracks[m[1]]['class'] # continue the same class track
       ret.append(track)
 
     if self.opt.public_det and len(unmatched_dets) > 0:
@@ -116,10 +121,10 @@ class Tracker(object):
             track['active'] = 1
             ret.append(track)
     else:
-      # # Private detection: create tracks for all un-matched detections
+      # Private detection: create tracks for all un-matched detections
       if mask_rcnn_pred is not None:
         for i, m in enumerate(mask_matched_indices):
-          if m[0] not in unmatched_dets:
+          if m[0] not in unmatched_dets: # find unmatched detection
             continue
           track = results[m[0]]
           if track['score'] > self.opt.new_thresh:
