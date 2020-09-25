@@ -12,6 +12,8 @@ import copy
 import numpy as np
 from opts import opts
 from detector import Detector
+from tools.accum_coco import AccumCOCODetResult
+import pickle
 
 
 image_ext = ['jpg', 'jpeg', 'png', 'webp']
@@ -22,6 +24,7 @@ def demo(opt):
   os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpus_str
   opt.debug = max(opt.debug, 1)
   detector = Detector(opt)
+  accum_coco = AccumCOCODetResult()
 
   if opt.demo == 'webcam' or \
     opt.demo[opt.demo.rfind('.') + 1:].lower() in video_ext:
@@ -59,14 +62,13 @@ def demo(opt):
       if is_video:
         _, img = cam.read()
         if img is None:
-          save_and_exit(opt, out, results, out_name)
+          save_and_exit(opt, accum_coco, out, results, out_name)
       else:
         if cnt < len(image_names):
           img = cv2.imread(image_names[cnt])
         else:
-          save_and_exit(opt, out, results, out_name)
-      cnt += 1
-
+          save_and_exit(opt, accum_coco, out, results, out_name)
+      
       # resize the original video for saving video results
       if opt.resize_video:
         img = cv2.resize(img, (opt.video_w, opt.video_h))
@@ -89,6 +91,7 @@ def demo(opt):
       # results[cnt] is a list of dicts:
       #  [{'bbox': [x1, y1, x2, y2], 'tracking_id': id, 'category_id': c, ...}]
       results[cnt] = ret['results']
+      accum_coco.add_det_to_coco(cnt, ret['results'])
 
       # save debug image to video
       if opt.save_video:
@@ -99,16 +102,20 @@ def demo(opt):
       # esc to quit and finish saving video
       # if cv2.waitKey(1) == 27:
       #   save_and_exit(opt, out, results, out_name)
-      #   return 
-  save_and_exit(opt, out, results)
+      #   return
+      cnt += 1
+  save_and_exit(opt, accum_coco, out, results)
 
 
-def save_and_exit(opt, out=None, results=None, out_name=''):
+def save_and_exit(opt, accum_coco, out=None, results=None, out_name=''):
+  if opt.record_mAP:
+    save_dict = {}
+    save_dict['full_res_pred'] = accum_coco.get_dt()
+    pickle.dump(save_dict, open(opt.save_dir + '/raw_save_dict.pkl', 'wb'))
   if opt.save_results and (results is not None):
     save_dir =  '../results/{}_results.json'.format(opt.exp_id + '_' + out_name)
     print('saving results to', save_dir)
-    json.dump(_to_list(copy.deepcopy(results)), 
-              open(save_dir, 'w'))
+    json.dump(_to_list(copy.deepcopy(results)), open(save_dir, 'w'))
   if opt.save_video and out is not None:
     out.release()
   sys.exit(0)
