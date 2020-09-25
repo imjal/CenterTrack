@@ -74,6 +74,7 @@ class opts(object):
     self.parser.add_argument('--not_show_number', action='store_true')
     self.parser.add_argument('--qualitative', action='store_true')
     self.parser.add_argument('--tango_color', action='store_true')
+    self.parser.add_argument('--record_mAP', action='store_true', help='record in coco mAP form')
 
     # model
     self.parser.add_argument('--arch', default='dla_34', 
@@ -318,6 +319,7 @@ class opts(object):
     opt.exp_dir = os.path.join(opt.root_dir, 'exp', opt.task)
     opt.save_dir = os.path.join(opt.exp_dir, opt.exp_id)
     opt.debug_dir = os.path.join(opt.save_dir, 'debug')
+    os.makedirs(opt.debug_dir, exist_ok=True)
     
     if opt.resume and opt.load_model == '':
       opt.load_model = os.path.join(opt.save_dir, 'model_last.pth')
