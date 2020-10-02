@@ -15,7 +15,7 @@ class AccumCOCODetResult:
             bbox = [bbox[0], bbox[1], bbox[2]-bbox[0], bbox[3]- bbox[1]]
             res = {
                 "image_id": int(iter_id), 
-                "category_id": dets[i]['class'], 
+                "category_id": dets[i]['class'] - 1, 
                 "bbox": bbox,
                 "score": dets[i]['score'],
                 "area": bbox[2] * bbox[3] # box area
