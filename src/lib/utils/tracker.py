@@ -56,7 +56,7 @@ class Tracker(object):
 
     if mask_rcnn_pred:
       L = len(mask_rcnn_pred['boxes'])
-      mask_rcnn_pred['boxes'] = np.array(mask_rcnn_pred['boxes']) / 3
+      mask_rcnn_pred['boxes'] = np.array(mask_rcnn_pred['boxes'])
       mask_centers = np.array([ [ (x[0] + x[2])/2, (x[1] + x[3])/2] for x in mask_rcnn_pred['boxes']])
       dist2 = ((reg_dets.reshape(-1, 1, 2) - mask_centers.reshape(1, -1, 2)) ** 2).sum(axis=2) # L2 distance between the dets and mask_centers
       mask_item_size = np.array([((item[2] - item[0]) * (item[3] - item[1])) for item in mask_rcnn_pred['boxes']], np.float32)

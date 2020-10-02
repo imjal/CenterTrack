@@ -51,7 +51,7 @@ class Detector(object):
     self.pre_image_ori = None
     self.tracker = Tracker(opt)
     self.debugger = Debugger(opt=opt, dataset=self.trained_dataset)
-    self.detections = pickle.load(open("/data2/jl5/bdd100k_pred/train/instances_driving1002.pkl", "rb"))
+    self.detections = pickle.load(open(opt.teacher_labels, "rb"))
     self.idx = 0
 
 
@@ -317,15 +317,14 @@ class Detector(object):
     inp_width, inp_height = meta['inp_width'], meta['inp_height']
     out_width, out_height = meta['out_width'], meta['out_height']
     input_hm = np.zeros((1, inp_height, inp_width), dtype=np.float32)
-
     output_inds = []
     for i in range(len(dets['scores'])):
       if dets['scores'][i] < self.opt.pre_thresh:
         continue
-      bbox = self._trans_bbox(np.array(dets['boxes'][i]) / 3, trans_input, inp_width, inp_height)
+      bbox = self._trans_bbox(np.array(dets['boxes'][i]), trans_input, inp_width, inp_height)
       bbox_out = self._trans_bbox(
-        np.array(dets['boxes'][i]) / 3, trans_output, out_width, out_height)
-      h, w = bbox[3] - bbox[1], bbox[2] - bbox[0]
+        np.array(dets['boxes'][i]), trans_output, out_width, out_height)
+      h, w = bbox_out[3] - bbox_out[1], bbox_out[2] - bbox_out[0]
       if (h > 0 and w > 0):
         radius = gaussian_radius((math.ceil(h), math.ceil(w)))
         radius = max(0, int(radius))

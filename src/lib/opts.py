@@ -75,6 +75,7 @@ class opts(object):
     self.parser.add_argument('--qualitative', action='store_true')
     self.parser.add_argument('--tango_color', action='store_true')
     self.parser.add_argument('--record_mAP', action='store_true', help='record in coco mAP form')
+    self.parser.add_argument('--teacher_labels', help="get teacher labels as a prior for the heatmap")
 
     # model
     self.parser.add_argument('--arch', default='dla_34', 
