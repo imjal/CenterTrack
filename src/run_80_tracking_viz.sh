@@ -1,0 +1,2 @@
+python demo.py tracking --exp_id baseline_driving_video$1 --load_model ../models/coco_tracking.pth --demo /data2/jl5/driving1/driving$1.mp4 \
+  --debug 1 --record_mAP --resize_video --video_h 720 --video_w 1280 --save_video # --debug 4 --save_video # 2160 --video_w 3840
