@@ -12,10 +12,11 @@ from .datasets.coco import COCO
 from .datasets.kitti import KITTI
 from .datasets.coco_hp import COCOHP
 from .datasets.mot import MOT
-from .datasets.nuscenes import nuScenes
+# from .datasets.nuscenes import nuScenes
 from .datasets.crowdhuman import CrowdHuman
 from .datasets.kitti_tracking import KITTITracking
 from .datasets.custom_dataset import CustomDataset
+from .datasets.prophese_event import PropheseGen1
 
 dataset_factory = {
   'custom': CustomDataset,
@@ -23,9 +24,10 @@ dataset_factory = {
   'kitti': KITTI,
   'coco_hp': COCOHP,
   'mot': MOT,
-  'nuscenes': nuScenes,
+  # 'nuscenes': nuScenes,
   'crowdhuman': CrowdHuman,
   'kitti_tracking': KITTITracking,
+  'prophesee': PropheseGen1
 }
 
 

@@ -16,6 +16,8 @@ class opts(object):
     self.parser.add_argument('--dataset', default='coco',
                              help='see lib/dataset/dataset_facotry for ' + 
                             'available datasets')
+    self.parser.add_argument('--data_stream_file', default='default')
+    self.parser.add_argument('--ann_data_dir', default='default')
     self.parser.add_argument('--test_dataset', default='',
                              help='coco | kitti | coco_hp | pascal')
     self.parser.add_argument('--exp_id', default='default')

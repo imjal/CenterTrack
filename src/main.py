@@ -50,22 +50,28 @@ def main(opt):
   if opt.val_intervals < opt.num_epochs or opt.test:
     print('Setting up validation data...')
     val_loader = torch.utils.data.DataLoader(
-      Dataset(opt, 'val'), batch_size=1, shuffle=False, num_workers=1,
-      pin_memory=True)
+        Dataset(opt, 'val'), batch_size=1, shuffle=False,
+        num_workers=opt.num_workers, pin_memory=True, drop_last=True
+    )
 
     if opt.test:
       _, preds = trainer.val(0, val_loader)
-      val_loader.dataset.run_eval(preds, opt.save_dir)
+      # val_loader.dataset.run_eval(preds, opt.save_dir)
       return
 
   print('Setting up train data...')
-  train_loader = torch.utils.data.DataLoader(
-      Dataset(opt, 'train'), batch_size=opt.batch_size, shuffle=True,
-      num_workers=opt.num_workers, pin_memory=True, drop_last=True
-  )
+  # train_loader = torch.utils.data.DataLoader(
+  #     Dataset(opt, 'train'), batch_size=opt.batch_size, shuffle=False,
+  #     num_workers=opt.num_workers, pin_memory=True, drop_last=True
+  # )
 
   print('Starting training...')
   for epoch in range(start_epoch + 1, opt.num_epochs + 1):
+    print('Setting up train data...')
+    train_loader = torch.utils.data.DataLoader(
+        Dataset(opt, 'train'), batch_size=opt.batch_size, shuffle=False,
+        num_workers=opt.num_workers, pin_memory=True, drop_last=True
+    )
     mark = epoch if opt.save_all else 'last'
     log_dict_train, _ = trainer.train(epoch, train_loader)
     logger.write('epoch: {} |'.format(epoch))
@@ -84,6 +90,9 @@ def main(opt):
         logger.write('{} {:8f} | '.format(k, v))
     else:
       save_model(os.path.join(opt.save_dir, 'model_last.pth'), 
+                 epoch, model, optimizer)
+    if epoch % 5 == 0:
+      save_model(os.path.join(opt.save_dir, f'model_{epoch}.pth'), 
                  epoch, model, optimizer)
     logger.write('\n')
     if epoch in opt.save_point:

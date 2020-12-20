@@ -236,7 +236,7 @@ class DLA(nn.Module):
         self.channels = channels
         self.num_classes = num_classes
         self.base_layer = nn.Sequential(
-            nn.Conv2d(3, channels[0], kernel_size=7, stride=1,
+            nn.Conv2d(9, channels[0], kernel_size=7, stride=1, # TODO: change inputs to 9 input channels
                       padding=3, bias=False),
             nn.BatchNorm2d(channels[0], momentum=BN_MOMENTUM),
             nn.ReLU(inplace=True))
@@ -255,7 +255,7 @@ class DLA(nn.Module):
                            level_root=True, root_residual=residual_root)
         if opt.pre_img:
             self.pre_img_layer = nn.Sequential(
-            nn.Conv2d(3, channels[0], kernel_size=7, stride=1,
+            nn.Conv2d(9, channels[0], kernel_size=7, stride=1, # change image layer
                       padding=3, bias=False),
             nn.BatchNorm2d(channels[0], momentum=BN_MOMENTUM),
             nn.ReLU(inplace=True))
@@ -602,7 +602,8 @@ class DLASeg(BaseModel):
         self.first_level = int(np.log2(down_ratio))
         self.last_level = 5
         self.base = globals()['dla{}'.format(num_layers)](
-            pretrained=(opt.load_model == ''), opt=opt)
+            pretrained=False, #(opt.load_model == ''), 
+            opt=opt)
 
         channels = self.base.channels
         scales = [2 ** i for i in range(len(channels[self.first_level:]))]

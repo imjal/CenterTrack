@@ -135,15 +135,20 @@ class Trainer(object):
     data_time, batch_time = AverageMeter(), AverageMeter()
     avg_loss_stats = {l: AverageMeter() for l in self.loss_stats \
                       if l == 'tot' or opt.weights[l] > 0}
-    num_iters = len(data_loader) if opt.num_iters < 0 else opt.num_iters
+    num_iters = opt.num_iters
     bar = Bar('{}/{}'.format(opt.task, opt.exp_id), max=num_iters)
     end = time.time()
-    for iter_id, batch in enumerate(data_loader):
+    data_loader = iter(data_loader)
+    iter_id = 0
+    while(True):
+      try:
+        batch = next(data_loader)
+      except StopIteration:
+        break
       if iter_id >= num_iters:
         break
       data_time.update(time.time() - end)
-
-      for k in batch:
+      for k in batch.keys():
         if k != 'meta':
           batch[k] = batch[k].to(device=opt.device, non_blocking=True)   
       output, loss, loss_stats = model_with_loss(batch)
@@ -174,6 +179,7 @@ class Trainer(object):
         self.debug(batch, output, iter_id, dataset=data_loader.dataset)
       
       del output, loss, loss_stats
+      iter_id+=1
     
     bar.finish()
     ret = {k: v.avg for k, v in avg_loss_stats.items()}
@@ -198,18 +204,21 @@ class Trainer(object):
     dets_gt = batch['meta']['gt_det']
     for i in range(1):
       debugger = Debugger(opt=opt, dataset=dataset)
-      img = batch['image'][i].detach().cpu().numpy().transpose(1, 2, 0)
+      img = np.sum(batch['image'][i].detach().cpu().numpy().transpose(1, 2, 0), axis=2)
+      img = np.stack((img,)*3, axis=-1)
+      # img = batch['image'][i].detach().cpu().numpy().transpose(1, 2, 0)
       img = np.clip(((
-        img * dataset.std + dataset.mean) * 255.), 0, 255).astype(np.uint8)
+        img + 1)/2) * 255, 0, 255).astype(np.uint8)
       pred = debugger.gen_colormap(output['hm'][i].detach().cpu().numpy())
       gt = debugger.gen_colormap(batch['hm'][i].detach().cpu().numpy())
       debugger.add_blend_img(img, pred, 'pred_hm')
       debugger.add_blend_img(img, gt, 'gt_hm')
 
       if 'pre_img' in batch:
-        pre_img = batch['pre_img'][i].detach().cpu().numpy().transpose(1, 2, 0)
+        pre_img = np.sum(batch['pre_img'][i].detach().cpu().numpy().transpose(1, 2, 0), axis=2)
+        pre_img = np.stack((pre_img,)*3, axis=-1)
         pre_img = np.clip(((
-          pre_img * dataset.std + dataset.mean) * 255), 0, 255).astype(np.uint8)
+          pre_img + 1)/2) * 255, 0, 255).astype(np.uint8)
         debugger.add_img(pre_img, 'pre_img_pred')
         debugger.add_img(pre_img, 'pre_img_gt')
         if 'pre_hm' in batch:
